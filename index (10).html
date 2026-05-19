@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>PSU CRM & Project Management System | Pacific States University</title>
+<meta name="description" content="Enterprise CRM & Project Management System for Pacific States University — By Konkuk University Foundation"/>
+<meta name="author" content="Roise Uddin"/>
+<meta property="og:title" content="PSU CRM & PM System"/>
+<meta property="og:description" content="Enterprise CRM & PM platform for Pacific States University"/>
+<meta property="og:type" content="website"/>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='16' fill='%231a5c38'/><text y='.9em' font-size='55' x='12' font-weight='900' fill='white' font-family='Georgia'>PSU</text></svg>"/>
+
+<!-- React + Babel -->
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<!-- Recharts -->
+<script src="https://unpkg.com/recharts@2.12.7/umd/Recharts.js"></script>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-thumb{background:#c1c9d0;border-radius:2px;}
+.fa{animation:fadeIn .25s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(5px);}to{opacity:1;transform:none;}}
+.ch{transition:all .18s ease;}
+.ch:hover{box-shadow:0 4px 18px rgba(26,92,56,.12);transform:translateY(-1px);}
+.nb:hover{background:rgba(255,255,255,.1)!important;}
+.tr{transition:background .1s;}
+.tr:hover{background:#f8fafc!important;cursor:pointer;}
+input:focus,select:focus{outline:none;}
+.pulse{animation:p 1.8s infinite;}
+@keyframes p{0%,100%{opacity:1;}50%{opacity:.45;}}
+.kc{transition:all .15s;}
+.kc:hover{box-shadow:0 4px 14px rgba(0,0,0,.1);transform:translateY(-1px);}
+@keyframes spin{to{transform:rotate(360deg);}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useRef,useEffect}=React;
+const {AreaChart,Area,BarChart,Bar,PieChart,Pie,Cell,LineChart,Line,XAxis,YAxis,Tooltip,ResponsiveContainer}=Recharts;
+
+/* ── PSU Brand ─────────────────────────────────── */
+const G='#1a5c38',GD='#0f3d20',GL='#236b44',GP='#e8f5ee';
+
+/* ── Sample Data ───────────────────────────────── */
+const kpis=[
+  {l:'Total Projects',v:24,ch:'+3',up:true,ic:'📁',c:'#1a5c38'},
+  {l:'Active Tasks',v:142,ch:'+18',up:true,ic:'✅',c:'#2563eb'},
+  {l:'Completed',v:89,ch:'+12',up:true,ic:'🎯',c:'#16a34a'},
+  {l:'Team Members',v:47,ch:'+5',up:true,ic:'👥',c:'#7c3aed'},
+  {l:'Pending',v:23,ch:'-4',up:false,ic:'⏳',c:'#d97706'},
+  {l:'Storage',v:'68%',ch:'+2%',up:false,ic:'💾',c:'#dc2626'},
+];
+const aData=[
+  {m:'Jan',t:45,d:38,p:4},{m:'Feb',t:52,d:44,p:6},{m:'Mar',t:68,d:56,p:8},
+  {m:'Apr',t:74,d:62,p:7},{m:'May',t:89,d:78,p:11},{m:'Jun',t:98,d:87,p:14},
+  {m:'Jul',t:112,d:95,p:12},{m:'Aug',t:128,d:109,p:16},{m:'Sep',t:142,d:122,p:18},
+];
+const pieD=[
+  {name:'Completed',v:89,c:'#16a34a'},{name:'In Progress',v:45,c:'#2563eb'},
+  {name:'Review',v:28,c:'#7c3aed'},{name:'Pending',v:23,c:'#d97706'},
+];
+const projects=[
+  {id:1,name:'ENPS Newsroom System',status:'In Progress',pri:'High',prog:75,dead:'2026-06-15',team:['RU','AN','MK'],budget:45000,spent:32000},
+  {id:2,name:'PSU Homepage Redesign',status:'In Progress',pri:'High',prog:60,dead:'2026-05-30',team:['RU','JL'],budget:12000,spent:8500},
+  {id:3,name:'IEEE Student Branch Portal',status:'Completed',pri:'Medium',prog:100,dead:'2026-04-20',team:['AN','SP'],budget:8000,spent:7800},
+  {id:4,name:'CRM Implementation',status:'Pending',pri:'High',prog:15,dead:'2026-08-01',team:['MK','JL','RU'],budget:65000,spent:9750},
+  {id:5,name:'Legacy Vault App v2',status:'On Hold',pri:'Low',prog:40,dead:'2026-09-15',team:['SP','AN'],budget:28000,spent:11200},
+  {id:6,name:'Faculty Training Portal',status:'In Progress',pri:'Medium',prog:35,dead:'2026-07-01',team:['RU','JL'],budget:15000,spent:5250},
+];
+const kanban={
+  'To Do':[
+    {id:1,title:'Design database schema for CRM',pri:'High',av:'RU',due:'May 25'},
+    {id:2,title:'Setup Docker containerization',pri:'Medium',av:'MK',due:'May 28'},
+    {id:3,title:'Write API documentation',pri:'Low',av:'AN',due:'Jun 2'},
+  ],
+  'In Progress':[
+    {id:4,title:'Implement JWT authentication flow',pri:'High',av:'RU',due:'May 22'},
+    {id:5,title:'Build Kanban drag-and-drop UI',pri:'High',av:'JL',due:'May 23'},
+    {id:6,title:'Integrate Socket.io realtime',pri:'Medium',av:'SP',due:'May 26'},
+  ],
+  'Review':[
+    {id:7,title:'User role permissions system',pri:'High',av:'MK',due:'May 20'},
+    {id:8,title:'PDF export module',pri:'Medium',av:'AN',due:'May 21'},
+  ],
+  'Completed':[
+    {id:9,title:'Initial project setup & CI/CD',pri:'Medium',av:'RU',due:'May 15'},
+    {id:10,title:'PSU branding & design system',pri:'High',av:'JL',due:'May 16'},
+    {id:11,title:'Database migrations setup',pri:'Medium',av:'SP',due:'May 17'},
+  ],
+};
+const customers=[
+  {id:1,name:'Desh Media Group',contact:'Ahmed Rahman',email:'a.rahman@deshmedia.com',stage:'Client',value:125000,industry:'Media'},
+  {id:2,name:'Pacific Tech Solutions',contact:'Sarah Chen',email:'s.chen@pactech.com',stage:'Negotiation',value:48000,industry:'Technology'},
+  {id:3,name:'GlobalEd Foundation',contact:'Dr. James Osei',email:'j.osei@globaled.org',stage:'Proposal',value:75000,industry:'Education'},
+  {id:4,name:'Soleris Wellness Ltd',contact:'Nasifa Rumali',email:'n.rumali@soleris.co',stage:'Active Lead',value:22000,industry:'Wellness'},
+  {id:5,name:'KU Foundation',contact:'Prof. Kim Min-jun',email:'minjun@kuf.ac.kr',stage:'Client',value:180000,industry:'Education'},
+  {id:6,name:'NetSec Alliance',contact:'Priya Sharma',email:'p.sharma@netsec.io',stage:'Cold Lead',value:35000,industry:'Cybersecurity'},
+];
+const team=[
+  {id:1,name:'Roise Uddin',role:'Super Admin',dept:'Engineering',email:'r.uddin@psu.edu',status:'Active',av:'RU',since:'2021'},
+  {id:2,name:'Nasifa Rumali',role:'Manager',dept:'Operations',email:'n.rumali@psu.edu',status:'Active',av:'NR',since:'2022'},
+  {id:3,name:'Alex Nguyen',role:'Staff',dept:'Development',email:'a.nguyen@psu.edu',status:'Active',av:'AN',since:'2023'},
+  {id:4,name:'Maria Kim',role:'Admin',dept:'IT',email:'m.kim@psu.edu',status:'Active',av:'MK',since:'2022'},
+  {id:5,name:'James Liu',role:'Staff',dept:'Design',email:'j.liu@psu.edu',status:'Away',av:'JL',since:'2023'},
+  {id:6,name:'Sara Patel',role:'Student/Intern',dept:'Engineering',email:'s.patel@psu.edu',status:'Active',av:'SP',since:'2024'},
+];
+const activities=[
+  {u:'RU',act:'Completed task',detail:'JWT Authentication Flow',t:'2m ago',type:'done'},
+  {u:'JL',act:'Updated project',detail:'PSU Homepage – 60%',t:'15m ago',type:'up'},
+  {u:'MK',act:'Added comment',detail:'Role Permissions review',t:'32m ago',type:'msg'},
+  {u:'AN',act:'Created task',detail:'API Documentation assigned',t:'1h ago',type:'new'},
+  {u:'NR',act:'New CRM lead',detail:'NetSec Alliance – $35K',t:'2h ago',type:'crm'},
+  {u:'SP',act:'Uploaded file',detail:'database-schema-v2.pdf',t:'3h ago',type:'file'},
+];
+const notifs=[
+  {text:'"JWT Auth Flow" due tomorrow',type:'warn',t:'5m ago'},
+  {text:'CRM Implementation approved',type:'ok',t:'1h ago'},
+  {text:'Message from Pacific Tech',type:'info',t:'2h ago'},
+  {text:'Storage at 68% – check soon',type:'warn',t:'3h ago'},
+];
+const docs=[
+  {n:'ENPS_Architecture.pdf',s:'2.4 MB',t:'PDF',m:'2026-05-18',o:'RU'},
+  {n:'PSU_CRM_Schema.xlsx',s:'156 KB',t:'XLSX',m:'2026-05-17',o:'MK'},
+  {n:'Project_Proposal.docx',s:'892 KB',t:'DOCX',m:'2026-05-15',o:'AN'},
+  {n:'IEEE_Research_FedXIDS.pdf',s:'1.8 MB',t:'PDF',m:'2026-05-14',o:'RU'},
+  {n:'PSU_Brand_Guidelines.png',s:'3.2 MB',t:'IMG',m:'2026-05-12',o:'JL'},
+  {n:'Q2_Budget_Report.xlsx',s:'244 KB',t:'XLSX',m:'2026-05-10',o:'NR'},
+];
+const barD=[
+  {d:'Engineering',t:52,c:44},{d:'Design',t:28,c:22},
+  {d:'Operations',t:35,c:28},{d:'IT',t:19,c:16},{d:'Research',t:42,c:38},
+];
+
+/* ── Helpers ───────────────────────────────────── */
+const avC={'RU':'#1a5c38','NR':'#2563eb','AN':'#7c3aed','MK':'#d97706','JL':'#db2777','SP':'#0891b2'};
+const Av=({i,s='sm'})=>{const sz={xs:'18px',sm:'28px',md:'36px',lg:'44px'}[s];return <div style={{width:sz,height:sz,borderRadius:'50%',background:avC[i]||G,display:'flex',alignItems:'center',justifyContent:'center',color:'white',fontWeight:700,fontSize:s==='xs'?'8px':s==='sm'?'10px':'12px',flexShrink:0}}>{i}</div>;};
+
+const Bdg=({s,sm})=>{const m={
+  'In Progress':'#dbeafe:#1d4ed8','Completed':'#dcfce7:#15803d','Pending':'#fef9c3:#a16207',
+  'On Hold':'#f3f4f6:#6b7280','Review':'#ede9fe:#6d28d9','To Do':'#f3f4f6:#374151',
+  'High':'#fee2e2:#b91c1c','Medium':'#fef9c3:#a16207','Low':'#dcfce7:#15803d',
+  'Active':'#dcfce7:#15803d','Away':'#fef9c3:#a16207',
+  'Client':'#dcfce7:#15803d','Negotiation':'#dbeafe:#1d4ed8','Proposal':'#ede9fe:#6d28d9',
+  'Active Lead':'#ffedd5:#c2410c','Cold Lead':'#f3f4f6:#6b7280',
+  'Super Admin':'#fee2e2:#b91c1c','Admin':'#ffedd5:#c2410c','Manager':'#dbeafe:#1d4ed8',
+  'Staff':'#dcfce7:#15803d','Student/Intern':'#ede9fe:#6d28d9',
+};
+const [bg,fc]=(m[s]||'#f3f4f6:#374151').split(':');
+return <span style={{background:bg,color:fc,padding:sm?'2px 6px':'2px 8px',borderRadius:'10px',fontSize:'11px',fontWeight:700,whiteSpace:'nowrap'}}>{s}</span>;};
+
+const Prog=({v,c,h='6px'})=><div style={{background:'#e5e7eb',borderRadius:'4px',height:h,overflow:'hidden'}}><div style={{width:`${v}%`,height:'100%',background:c||G,borderRadius:'4px',transition:'width .4s'}}/></div>;
+
+const Card=({children,style={}})=><div style={{background:'white',borderRadius:'14px',border:'1px solid #f1f5f9',boxShadow:'0 1px 4px rgba(0,0,0,.04)',...style}}>{children}</div>;
+
+const TH=({cols})=><thead><tr style={{borderBottom:'1px solid #f1f5f9'}}>{cols.map(c=><th key={c} style={{textAlign:'left',padding:'9px 12px',fontSize:'10px',fontWeight:700,color:'#94a3b8',textTransform:'uppercase',letterSpacing:'.05em',background:'#f8fafc',whiteSpace:'nowrap'}}>{c}</th>)}</tr></thead>;
+
+/* ── Views ────────────────────────────────────── */
+const Dashboard=({nav})=>(
+  <div style={{padding:'22px',display:'flex',flexDirection:'column',gap:'18px'}} className="fa">
+    <Card style={{padding:'20px 24px',background:G,border:'none',position:'relative',overflow:'hidden'}}>
+      <div style={{position:'relative',zIndex:1}}>
+        <div style={{fontSize:'21px',fontWeight:800,color:'white'}}>Good morning, Roise 👋</div>
+        <div style={{fontSize:'13px',color:'rgba(255,255,255,.7)',marginTop:'3px'}}>PSU CRM & PM System — Pacific States University · Los Angeles, CA</div>
+        <div style={{display:'flex',gap:'20px',marginTop:'12px'}}>
+          {[['Live Demo','GitHub Pages'],['Stack','Next.js + Node.js'],['Author','Roise Uddin']].map(([l,v])=>(
+            <div key={l} style={{display:'flex',alignItems:'center',gap:'6px'}}>
+              <div style={{width:'6px',height:'6px',borderRadius:'50%',background:'rgba(255,255,255,.6)'}}/>
+              <span style={{fontSize:'12px',color:'rgba(255,255,255,.75)'}}>{l}: <b style={{color:'white'}}>{v}</b></span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div style={{position:'absolute',right:'24px',top:'50%',transform:'translateY(-50%)',opacity:.07,fontSize:'80px',fontFamily:'Georgia,serif',fontWeight:900,color:'white'}}>PSU</div>
+    </Card>
+
+    <div style={{display:'grid',gridTemplateColumns:'repeat(6,1fr)',gap:'10px'}}>
+      {kpis.map((k,i)=>(
+        <Card key={i} style={{padding:'14px',cursor:'pointer'}} className="ch">
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'8px'}}>
+            <div style={{width:'32px',height:'32px',borderRadius:'9px',background:k.c+'18',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'15px'}}>{k.ic}</div>
+            <span style={{fontSize:'11px',fontWeight:700,color:k.up?'#16a34a':'#dc2626'}}>{k.ch}</span>
+          </div>
+          <div style={{fontSize:'22px',fontWeight:800,color:'#1e293b'}}>{k.v}</div>
+          <div style={{fontSize:'11px',color:'#94a3b8',marginTop:'2px'}}>{k.l}</div>
+        </Card>
+      ))}
+    </div>
+
+    <div style={{display:'grid',gridTemplateColumns:'2fr 1fr',gap:'16px'}}>
+      <Card style={{padding:'18px'}}>
+        <div style={{fontWeight:700,color:'#1e293b',fontSize:'14px',marginBottom:'4px'}}>Project & Task Analytics</div>
+        <div style={{fontSize:'12px',color:'#94a3b8',marginBottom:'14px'}}>Last 9 months</div>
+        <ResponsiveContainer width="100%" height={175}>
+          <AreaChart data={aData}>
+            <defs>
+              <linearGradient id="gt" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#2563eb" stopOpacity={.12}/><stop offset="95%" stopColor="#2563eb" stopOpacity={0}/>
+              </linearGradient>
+              <linearGradient id="gd" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor={G} stopOpacity={.18}/><stop offset="95%" stopColor={G} stopOpacity={0}/>
+              </linearGradient>
+            </defs>
+            <XAxis dataKey="m" tick={{fontSize:10,fill:'#94a3b8'}} axisLine={false} tickLine={false}/>
+            <YAxis tick={{fontSize:10,fill:'#94a3b8'}} axisLine={false} tickLine={false}/>
+            <Tooltip contentStyle={{borderRadius:'8px',fontSize:'11px',border:'1px solid #e2e8f0'}}/>
+            <Area type="monotone" dataKey="t" stroke="#2563eb" strokeWidth={2} fill="url(#gt)" name="Active Tasks"/>
+            <Area type="monotone" dataKey="d" stroke={G} strokeWidth={2} fill="url(#gd)" name="Completed"/>
+          </AreaChart>
+        </ResponsiveContainer>
+      </Card>
+      <Card style={{padding:'18px'}}>
+        <div style={{fontWeight:700,color:'#1e293b',fontSize:'14px'}}>Task Status</div>
+        <div style={{fontSize:'12px',color:'#94a3b8',marginBottom:'10px'}}>Current distribution</div>
+        <ResponsiveContainer width="100%" height={140}>
+          <PieChart>
+            <Pie data={pieD} cx="50%" cy="50%" innerRadius={38} outerRadius={60} paddingAngle={3} dataKey="v">
+              {pieD.map((e,i)=><Cell key={i} fill={e.c}/>)}
+            </Pie>
+            <Tooltip contentStyle={{borderRadius:'8px',fontSize:'11px'}}/>
+          </PieChart>
+        </ResponsiveContainer>
+        <div style={{display:'flex',flexDirection:'column',gap:'5px',marginTop:'8px'}}>
+          {pieD.map((d,i)=>(
+            <div key={i} style={{display:'flex',alignItems:'center',justifyContent:'space-between',fontSize:'12px'}}>
+              <div style={{display:'flex',alignItems:'center',gap:'6px'}}><div style={{width:'8px',height:'8px',borderRadius:'50%',background:d.c}}/><span style={{color:'#64748b'}}>{d.name}</span></div>
+              <span style={{fontWeight:700,color:'#1e293b'}}>{d.v}</span>
+            </div>
+          ))}
+        </div>
+      </Card>
+    </div>
+
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'16px'}}>
+      <Card style={{padding:'18px'}}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'14px'}}>
+          <div style={{fontWeight:700,color:'#1e293b',fontSize:'14px'}}>Recent Activity</div>
+          <span style={{fontSize:'12px',color:G,cursor:'pointer',fontWeight:600}}>View all</span>
+        </div>
+        <div style={{display:'flex',flexDirection:'column',gap:'11px'}}>
+          {activities.map((a,i)=>(
+            <div key={i} style={{display:'flex',alignItems:'flex-start',gap:'10px'}}>
+              <Av i={a.u}/>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontSize:'13px',color:'#374151'}}><b>{a.act}</b>: {a.detail}</div>
+                <div style={{fontSize:'11px',color:'#94a3b8',marginTop:'2px'}}>{a.t}</div>
+              </div>
+              <div style={{width:'7px',height:'7px',borderRadius:'50%',marginTop:'5px',flexShrink:0,background:a.type==='done'?'#16a34a':a.type==='up'?'#2563eb':a.type==='msg'?'#7c3aed':a.type==='crm'?'#d97706':'#9ca3af'}}/>
+            </div>
+          ))}
+        </div>
+      </Card>
+      <Card style={{padding:'18px'}}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'14px'}}>
+          <div style={{fontWeight:700,color:'#1e293b',fontSize:'14px'}}>Active Projects</div>
+          <span onClick={()=>nav('projects')} style={{fontSize:'12px',color:G,cursor:'pointer',fontWeight:600}}>View all →</span>
+        </div>
+        <div style={{display:'flex',flexDirection:'column',gap:'9px'}}>
+          {projects.filter(p=>p.status!=='Completed').slice(0,4).map(p=>(
+            <div key={p.id} style={{display:'flex',alignItems:'center',gap:'10px',padding:'7px',borderRadius:'8px',cursor:'pointer'}} onMouseEnter={e=>e.currentTarget.style.background='#f8fafc'} onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
+              <div style={{width:'32px',height:'32px',borderRadius:'8px',background:G+'15',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'14px',flexShrink:0}}>📁</div>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontSize:'13px',fontWeight:600,color:'#1e293b',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{p.name}</div>
+                <div style={{display:'flex',alignItems:'center',gap:'6px',marginTop:'3px'}}>
+                  <div style={{flex:1}}><Prog v={p.prog}/></div>
+                  <span style={{fontSize:'10px',color:'#94a3b8',flexShrink:0}}>{p.prog}%</span>
+                </div>
+              </div>
+              <Bdg s={p.status}/>
+            </div>
+          ))}
+        </div>
+      </Card>
+    </div>
+  </div>
+);
+
+const ProjectsView=()=>{
+  const [view,setView]=useState('table');
+  return(
+    <div style={{padding:'22px'}} className="fa">
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'18px'}}>
+        <div>
+          <div style={{fontSize:'20px',fontWeight:800,color:'#1e293b'}}>Projects</div>
+          <div style={{fontSize:'13px',color:'#94a3b8',marginTop:'2px'}}>Manage all university & business projects</div>
+        </div>
+        <div style={{display:'flex',gap:'8px',alignItems:'center'}}>
+          <div style={{display:'flex',background:'#f1f5f9',borderRadius:'8px',padding:'2px'}}>
+            {['table','kanban'].map(v=><button key={v} onClick={()=>setView(v)} style={{padding:'5px 12px',fontSize:'11px',fontWeight:600,borderRadius:'6px',border:'none',cursor:'pointer',background:view===v?'white':'transparent',color:view===v?'#1e293b':'#94a3b8',boxShadow:view===v?'0 1px 3px rgba(0,0,0,.06)':'none',textTransform:'capitalize'}}>{v}</button>)}
+          </div>
+          <button style={{padding:'8px 14px',background:G,color:'white',border:'none',borderRadius:'8px',fontSize:'13px',fontWeight:600,cursor:'pointer'}}>+ New Project</button>
+        </div>
+      </div>
+      {view==='table'?(
+        <Card>
+          <table style={{width:'100%',borderCollapse:'collapse'}}>
+            <TH cols={['Project','Status','Priority','Progress','Budget','Team','Deadline']}/>
+            <tbody>
+              {projects.map(p=>(
+                <tr key={p.id} style={{borderBottom:'1px solid #f8fafc'}} className="tr">
+                  <td style={{padding:'10px 12px'}}><div style={{display:'flex',alignItems:'center',gap:'8px'}}><div style={{width:'30px',height:'30px',borderRadius:'8px',background:G+'12',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'13px'}}>📁</div><span style={{fontSize:'13px',fontWeight:600,color:'#1e293b'}}>{p.name}</span></div></td>
+                  <td style={{padding:'10px 12px'}}><Bdg s={p.status}/></td>
+                  <td style={{padding:'10px 12px'}}><Bdg s={p.pri}/></td>
+                  <td style={{padding:'10px 12px'}}><div style={{display:'flex',alignItems:'center',gap:'6px',minWidth:'90px'}}><div style={{flex:1}}><Prog v={p.prog}/></div><span style={{fontSize:'11px',color:'#94a3b8'}}>{p.prog}%</span></div></td>
+                  <td style={{padding:'10px 12px',fontSize:'13px'}}><b>${p.spent.toLocaleString()}</b><span style={{color:'#94a3b8',fontSize:'11px'}}>/{p.budget.toLocaleString()}</span></td>
+                  <td style={{padding:'10px 12px'}}><div style={{display:'flex'}}>{p.team.map((t,i)=><div key={i} style={{marginLeft:i?'-4px':0}}><Av i={t} s="xs"/></div>)}</div></td>
+                  <td style={{padding:'10px 12px',fontSize:'12px',color:'#64748b'}}>{p.dead}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </Card>
+      ):(
+        <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:'14px'}}>
+          {Object.entries(kanban).map(([col,tasks])=>(
+            <div key={col} style={{background:'#f8fafc',borderRadius:'12px',padding:'12px'}}>
+              <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'12px'}}>
+                <div style={{display:'flex',alignItems:'center',gap:'6px'}}>
+                  <span style={{fontSize:'13px',fontWeight:700,color:'#374151'}}>{col}</span>
+                  <span style={{background:'#e2e8f0',color:'#64748b',fontSize:'11px',padding:'1px 7px',borderRadius:'20px',fontWeight:600}}>{tasks.length}</span>
+                </div>
+                <span style={{fontSize:'18px',color:'#94a3b8',cursor:'pointer',lineHeight:1}}>+</span>
+              </div>
+              <div style={{display:'flex',flexDirection:'column',gap:'8px'}}>
+                {tasks.map(t=>(
+                  <div key={t.id} style={{background:'white',borderRadius:'10px',padding:'12px',border:'1px solid #f1f5f9',cursor:'pointer'}} className="kc">
+                    <p style={{fontSize:'13px',color:'#1e293b',lineHeight:'1.4',fontWeight:500,marginBottom:'8px'}}>{t.title}</p>
+                    <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+                      <Bdg s={t.pri} sm/><span style={{fontSize:'11px',color:'#94a3b8'}}>📅 {t.due}</span>
+                    </div>
+                    <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginTop:'8px',paddingTop:'8px',borderTop:'1px solid #f8fafc'}}>
+                      <Av i={t.av} s="xs"/><div style={{fontSize:'12px',color:'#cbd5e1'}}>📎 💬</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const CRMView=()=>{
+  const stages=['Cold Lead','Active Lead','Proposal','Negotiation','Client'];
+  const total=customers.reduce((a,c)=>a+c.value,0);
+  return(
+    <div style={{padding:'22px'}} className="fa">
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'18px'}}>
+        <div><div style={{fontSize:'20px',fontWeight:800,color:'#1e293b'}}>CRM — Customer Relations</div><div style={{fontSize:'13px',color:'#94a3b8'}}>Pipeline: <b style={{color:'#1e293b'}}>${total.toLocaleString()}</b></div></div>
+        <button style={{padding:'8px 14px',background:G,color:'white',border:'none',borderRadius:'8px',fontSize:'13px',fontWeight:600,cursor:'pointer'}}>+ Add Customer</button>
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(5,1fr)',gap:'10px',marginBottom:'18px'}}>
+        {stages.map(s=>{const ct=customers.filter(c=>c.stage===s).length;const val=customers.filter(c=>c.stage===s).reduce((a,c)=>a+c.value,0);return(
+          <Card key={s} style={{padding:'14px',textAlign:'center'}} className="ch"><Bdg s={s}/><div style={{fontSize:'26px',fontWeight:800,color:'#1e293b',margin:'8px 0 2px'}}>{ct}</div><div style={{fontSize:'11px',color:'#94a3b8'}}>${val.toLocaleString()}</div></Card>
+        );})}
+      </div>
+      <Card>
+        <table style={{width:'100%',borderCollapse:'collapse'}}>
+          <TH cols={['Company','Contact','Industry','Stage','Value','Actions']}/>
+          <tbody>
+            {customers.map(c=>(
+              <tr key={c.id} style={{borderBottom:'1px solid #f8fafc'}} className="tr">
+                <td style={{padding:'10px 12px'}}><div style={{display:'flex',alignItems:'center',gap:'8px'}}><div style={{width:'30px',height:'30px',borderRadius:'8px',background:'#dbeafe',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'14px'}}>🏢</div><span style={{fontSize:'13px',fontWeight:600,color:'#1e293b'}}>{c.name}</span></div></td>
+                <td style={{padding:'10px 12px'}}><div style={{fontSize:'13px',color:'#374151'}}>{c.contact}</div><div style={{fontSize:'11px',color:'#94a3b8'}}>✉ {c.email}</div></td>
+                <td style={{padding:'10px 12px',fontSize:'13px',color:'#64748b'}}>{c.industry}</td>
+                <td style={{padding:'10px 12px'}}><Bdg s={c.stage}/></td>
+                <td style={{padding:'10px 12px',fontSize:'13px',fontWeight:700,color:'#1e293b'}}>${c.value.toLocaleString()}</td>
+                <td style={{padding:'10px 12px'}}><div style={{display:'flex',gap:'4px'}}>{['✏️','📞','✉️'].map((ic,i)=><button key={i} style={{padding:'3px 5px',background:'none',border:'none',cursor:'pointer',fontSize:'12px',borderRadius:'4px'}} onMouseEnter={e=>e.currentTarget.style.background='#f1f5f9'} onMouseLeave={e=>e.currentTarget.style.background='none'}>{ic}</button>)}</div></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </Card>
+    </div>
+  );
+};
+
+const TeamView=()=>(
+  <div style={{padding:'22px'}} className="fa">
+    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'18px'}}>
+      <div><div style={{fontSize:'20px',fontWeight:800,color:'#1e293b'}}>Team Members</div><div style={{fontSize:'13px',color:'#94a3b8'}}>{team.length} shown · 47 total</div></div>
+      <button style={{padding:'8px 14px',background:G,color:'white',border:'none',borderRadius:'8px',fontSize:'13px',fontWeight:600,cursor:'pointer'}}>+ Invite Member</button>
+    </div>
+    <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'14px'}}>
+      {team.map(m=>(
+        <Card key={m.id} style={{padding:'18px',cursor:'pointer'}} className="ch">
+          <div style={{display:'flex',alignItems:'flex-start',gap:'10px',marginBottom:'12px'}}>
+            <Av i={m.av} s="md"/>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontSize:'14px',fontWeight:700,color:'#1e293b'}}>{m.name}</div>
+              <div style={{fontSize:'11px',color:'#94a3b8'}}>{m.dept}</div>
+            </div>
+            <div style={{width:'8px',height:'8px',borderRadius:'50%',background:m.status==='Active'?'#16a34a':'#d97706',marginTop:'4px'}}/>
+          </div>
+          <div style={{borderTop:'1px solid #f8fafc',paddingTop:'10px',display:'flex',flexDirection:'column',gap:'5px'}}>
+            <div style={{fontSize:'11px',color:'#64748b'}}>✉ {m.email}</div>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}><Bdg s={m.role}/><span style={{fontSize:'10px',color:'#94a3b8'}}>Since {m.since}</span></div>
+          </div>
+        </Card>
+      ))}
+    </div>
+  </div>
+);
+
+const DocumentsView=()=>{
+  const tc={PDF:'#fee2e2:#b91c1c',XLSX:'#dcfce7:#15803d',DOCX:'#dbeafe:#1d4ed8',IMG:'#ede9fe:#6d28d9'};
+  return(
+    <div style={{padding:'22px'}} className="fa">
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'18px'}}>
+        <div><div style={{fontSize:'20px',fontWeight:800,color:'#1e293b'}}>Documents & Storage</div><div style={{fontSize:'13px',color:'#94a3b8'}}>68% of 100 GB used</div></div>
+        <button style={{padding:'8px 14px',background:G,color:'white',border:'none',borderRadius:'8px',fontSize:'13px',fontWeight:600,cursor:'pointer'}}>⬆ Upload File</button>
+      </div>
+      <Card style={{padding:'16px',marginBottom:'14px'}}>
+        <div style={{display:'flex',justifyContent:'space-between',fontSize:'13px',marginBottom:'8px'}}><span style={{color:'#374151'}}>Storage</span><b style={{color:'#1e293b'}}>68 GB / 100 GB</b></div>
+        <div style={{background:'#e5e7eb',borderRadius:'6px',height:'8px',overflow:'hidden'}}><div style={{width:'68%',height:'100%',background:G,borderRadius:'6px'}}/></div>
+        <div style={{display:'flex',gap:'16px',marginTop:'10px'}}>
+          {[['PDF','35%','#ef4444'],['Media','22%','#8b5cf6'],['Docs','28%','#2563eb'],['Other','15%','#9ca3af']].map(([t,p,c])=>(
+            <div key={t} style={{display:'flex',alignItems:'center',gap:'5px',fontSize:'12px',color:'#64748b'}}><div style={{width:'8px',height:'8px',borderRadius:'50%',background:c}}/>{t} {p}</div>
+          ))}
+        </div>
+      </Card>
+      <Card>
+        <table style={{width:'100%',borderCollapse:'collapse'}}>
+          <TH cols={['Name','Type','Size','Modified','Owner','Actions']}/>
+          <tbody>
+            {docs.map((d,i)=>{const [bg,fc]=(tc[d.t]||'#f3f4f6:#374151').split(':');return(
+              <tr key={i} style={{borderBottom:'1px solid #f8fafc'}} className="tr">
+                <td style={{padding:'10px 12px'}}><div style={{display:'flex',alignItems:'center',gap:'8px'}}><span style={{fontSize:'16px'}}>📄</span><span style={{fontSize:'13px',color:'#1e293b'}}>{d.n}</span></div></td>
+                <td style={{padding:'10px 12px'}}><span style={{background:bg,color:fc,padding:'2px 8px',borderRadius:'4px',fontSize:'11px',fontWeight:700}}>{d.t}</span></td>
+                <td style={{padding:'10px 12px',fontSize:'13px',color:'#64748b'}}>{d.s}</td>
+                <td style={{padding:'10px 12px',fontSize:'13px',color:'#64748b'}}>{d.m}</td>
+                <td style={{padding:'10px 12px'}}><Av i={d.o} s="xs"/></td>
+                <td style={{padding:'10px 12px'}}><div style={{display:'flex',gap:'3px'}}>{['⬇️','✏️','🗑️'].map((ic,j)=><button key={j} style={{padding:'3px 5px',background:'none',border:'none',cursor:'pointer',fontSize:'12px',borderRadius:'4px'}} onMouseEnter={e=>e.currentTarget.style.background='#f1f5f9'} onMouseLeave={e=>e.currentTarget.style.background='none'}>{ic}</button>)}</div></td>
+              </tr>
+            );})}
+          </tbody>
+        </table>
+      </Card>
+    </div>
+  );
+};
+
+const ReportsView=()=>(
+  <div style={{padding:'22px'}} className="fa">
+    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'18px'}}>
+      <div><div style={{fontSize:'20px',fontWeight:800,color:'#1e293b'}}>Reports & Analytics</div><div style={{fontSize:'13px',color:'#94a3b8'}}>Comprehensive performance insights</div></div>
+      <div style={{display:'flex',gap:'8px'}}>
+        {['Export PDF','Export Excel'].map(b=><button key={b} style={{padding:'8px 12px',border:'1px solid #e2e8f0',borderRadius:'8px',fontSize:'12px',color:'#64748b',background:'white',cursor:'pointer'}}>⬇ {b}</button>)}
+      </div>
+    </div>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'14px'}}>
+      <Card style={{padding:'18px'}}>
+        <div style={{fontWeight:700,color:'#1e293b',fontSize:'14px',marginBottom:'14px'}}>Departmental Task Performance</div>
+        <ResponsiveContainer width="100%" height={200}>
+          <BarChart data={barD} barGap={3}>
+            <XAxis dataKey="d" tick={{fontSize:11,fill:'#94a3b8'}} axisLine={false} tickLine={false}/>
+            <YAxis tick={{fontSize:10,fill:'#94a3b8'}} axisLine={false} tickLine={false}/>
+            <Tooltip contentStyle={{borderRadius:'8px',fontSize:'11px'}}/>
+            <Bar dataKey="t" name="Total" fill="#dbeafe" radius={[4,4,0,0]}/>
+            <Bar dataKey="c" name="Completed" fill={G} radius={[4,4,0,0]}/>
+          </BarChart>
+        </ResponsiveContainer>
+      </Card>
+      <Card style={{padding:'18px'}}>
+        <div style={{fontWeight:700,color:'#1e293b',fontSize:'14px',marginBottom:'14px'}}>Monthly Project Growth</div>
+        <ResponsiveContainer width="100%" height={200}>
+          <AreaChart data={aData}>
+            <defs><linearGradient id="gp" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={G} stopOpacity={.2}/><stop offset="95%" stopColor={G} stopOpacity={0}/></linearGradient></defs>
+            <XAxis dataKey="m" tick={{fontSize:10,fill:'#94a3b8'}} axisLine={false} tickLine={false}/>
+            <YAxis tick={{fontSize:10,fill:'#94a3b8'}} axisLine={false} tickLine={false}/>
+            <Tooltip contentStyle={{borderRadius:'8px',fontSize:'11px'}}/>
+            <Area type="monotone" dataKey="p" stroke={G} strokeWidth={2} fill="url(#gp)" name="Projects"/>
+          </AreaChart>
+        </ResponsiveContainer>
+      </Card>
+      <Card style={{padding:'18px'}}>
+        <div style={{fontWeight:700,color:'#1e293b',fontSize:'14px',marginBottom:'14px'}}>Budget Utilization</div>
+        <div style={{display:'flex',flexDirection:'column',gap:'11px'}}>
+          {projects.map(p=>{const pct=Math.round(p.spent/p.budget*100);return(
+            <div key={p.id}><div style={{display:'flex',justifyContent:'space-between',marginBottom:'3px'}}><span style={{fontSize:'12px',color:'#374151',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',maxWidth:'60%'}}>{p.name}</span><span style={{fontSize:'11px',color:'#94a3b8',flexShrink:0}}>${p.spent.toLocaleString()}</span></div><Prog v={pct} c={pct>90?'#ef4444':G}/></div>
+          );})}
+        </div>
+      </Card>
+      <Card style={{padding:'18px'}}>
+        <div style={{fontWeight:700,color:'#1e293b',fontSize:'14px',marginBottom:'14px'}}>CRM Sales Funnel</div>
+        <div style={{display:'flex',flexDirection:'column',gap:'8px'}}>
+          {['Cold Lead','Active Lead','Proposal','Negotiation','Client'].map((s,i)=>{
+            const ct=customers.filter(c=>c.stage===s).length;
+            const val=customers.filter(c=>c.stage===s).reduce((a,c)=>a+c.value,0);
+            const w=[100,80,65,50,38][i];
+            return(
+              <div key={s} style={{display:'flex',alignItems:'center',gap:'10px'}}>
+                <span style={{fontSize:'11px',color:'#94a3b8',width:'80px',textAlign:'right',flexShrink:0}}>{s}</span>
+                <div style={{width:`${w}%`,height:'28px',borderRadius:'6px',background:G,opacity:0.28+i*0.14,display:'flex',alignItems:'center',padding:'0 10px',fontSize:'11px',fontWeight:700,color:'white'}}>
+                  {ct} · ${val.toLocaleString()}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </Card>
+    </div>
+  </div>
+);
+
+const AIView=()=>{
+  const [msgs,setMsgs]=useState([{r:'a',t:'Hello! I\'m your PSU AI Assistant, powered by Claude. I can help with project summaries, task recommendations, email drafting, and analytics. How can I help today?'}]);
+  const [inp,setInp]=useState('');
+  const [loading,setLoading]=useState(false);
+  const endRef=useRef(null);
+  const sugg=['Summarize active projects','Which tasks are overdue?','Draft email to Pacific Tech','Analyze team productivity'];
+  useEffect(()=>{endRef.current?.scrollIntoView({behavior:'smooth'});},[msgs]);
+  const send=async(text)=>{
+    const m=text||inp;
+    if(!m.trim()||loading)return;
+    setMsgs(ms=>[...ms,{r:'u',t:m}]);
+    setInp('');setLoading(true);
+    try{
+      const res=await fetch('https://api.anthropic.com/v1/messages',{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,
+          system:`You are PSU AI Assistant for Pacific States University's CRM & PM system. Faculty: Roise Uddin (Adjunct Instructor, IEEE Senior Member). Projects: ${projects.map(p=>p.name).join(', ')}. Be concise, professional, helpful.`,
+          messages:[...msgs.filter((_,i)=>i>0).map(m=>({role:m.r==='u'?'user':'assistant',content:m.t})),{role:'user',content:m}]
+        })
+      });
+      const d=await res.json();
+      setMsgs(ms=>[...ms,{r:'a',t:d.content?.[0]?.text||'Unable to process that.'}]);
+    }catch{setMsgs(ms=>[...ms,{r:'a',t:'AI service unavailable right now. Please try again.'}]);}
+    setLoading(false);
+  };
+  return(
+    <div style={{padding:'22px',display:'flex',flexDirection:'column',gap:'14px'}} className="fa">
+      <div style={{display:'flex',alignItems:'center',gap:'12px'}}>
+        <div style={{width:'44px',height:'44px',borderRadius:'12px',background:G,display:'flex',alignItems:'center',justifyContent:'center',fontSize:'22px'}}>⚡</div>
+        <div>
+          <div style={{fontSize:'20px',fontWeight:800,color:'#1e293b'}}>AI Assistant</div>
+          <div style={{fontSize:'12px',color:'#94a3b8'}}>Powered by Claude — smart insights, automation & analytics</div>
+        </div>
+        <div style={{marginLeft:'auto',padding:'4px 10px',borderRadius:'20px',background:G+'15',color:G,fontSize:'11px',fontWeight:800}}>LIVE AI</div>
+      </div>
+      <Card style={{padding:'16px',overflowY:'auto',display:'flex',flexDirection:'column',gap:'12px',minHeight:'300px',maxHeight:'380px'}}>
+        {msgs.map((m,i)=>(
+          <div key={i} style={{display:'flex',justifyContent:m.r==='u'?'flex-end':'flex-start'}}>
+            <div style={{maxWidth:'72%',padding:'10px 14px',borderRadius:m.r==='u'?'14px 14px 4px 14px':'14px 14px 14px 4px',fontSize:'13px',lineHeight:'1.55',background:m.r==='u'?G:'#f8fafc',color:m.r==='u'?'white':'#374151',border:m.r==='u'?'none':'1px solid #f1f5f9'}}>{m.t}</div>
+          </div>
+        ))}
+        {loading&&<div style={{display:'flex',justifyContent:'flex-start'}}><div style={{padding:'10px 14px',borderRadius:'14px 14px 14px 4px',background:'#f8fafc',border:'1px solid #f1f5f9',fontSize:'13px',color:'#94a3b8'}} className="pulse">Thinking…</div></div>}
+        <div ref={endRef}/>
+      </Card>
+      <div style={{display:'flex',flexWrap:'wrap',gap:'6px'}}>
+        {sugg.map((s,i)=><button key={i} onClick={()=>send(s)} style={{fontSize:'11px',padding:'6px 12px',borderRadius:'20px',border:'1px solid #e2e8f0',background:'white',color:'#64748b',cursor:'pointer',transition:'all .15s'}} onMouseEnter={e=>{e.currentTarget.style.borderColor=G;e.currentTarget.style.color=G;}} onMouseLeave={e=>{e.currentTarget.style.borderColor='#e2e8f0';e.currentTarget.style.color='#64748b';}}>{s}</button>)}
+      </div>
+      <div style={{display:'flex',gap:'8px'}}>
+        <input value={inp} onChange={e=>setInp(e.target.value)} onKeyDown={e=>e.key==='Enter'&&send()} placeholder="Ask about projects, tasks, or get AI insights…" style={{flex:1,padding:'10px 14px',border:'1px solid #e2e8f0',borderRadius:'10px',fontSize:'13px',outline:'none'}}/>
+        <button onClick={()=>send()} disabled={loading} style={{padding:'10px 20px',background:loading?'#94a3b8':G,color:'white',border:'none',borderRadius:'10px',fontSize:'13px',fontWeight:700,cursor:loading?'not-allowed':'pointer'}}>{loading?'…':'Send'}</button>
+      </div>
+    </div>
+  );
+};
+
+/* ── Nav ──────────────────────────────────────── */
+const navItems=[
+  {id:'dashboard',l:'Dashboard',ic:'📊'},
+  {id:'projects',l:'Projects',ic:'📁'},
+  {id:'crm',l:'CRM',ic:'💼'},
+  {id:'team',l:'Team',ic:'👥'},
+  {id:'documents',l:'Documents',ic:'📄'},
+  {id:'reports',l:'Reports',ic:'📈'},
+  {id:'ai',l:'AI Assistant',ic:'⚡'},
+  {id:'settings',l:'Settings',ic:'⚙️'},
+];
+
+/* ── App ──────────────────────────────────────── */
+function App(){
+  const [view,setView]=useState('dashboard');
+  const [col,setCol]=useState(false);
+  const [notif,setNotif]=useState(false);
+
+  const render=()=>{switch(view){
+    case 'dashboard':return <Dashboard nav={setView}/>;
+    case 'projects': return <ProjectsView/>;
+    case 'crm':      return <CRMView/>;
+    case 'team':     return <TeamView/>;
+    case 'documents':return <DocumentsView/>;
+    case 'reports':  return <ReportsView/>;
+    case 'ai':       return <AIView/>;
+    default:return(
+      <div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'80px',textAlign:'center'}}>
+        <div style={{fontSize:'48px',marginBottom:'14px'}}>{navItems.find(n=>n.id===view)?.ic}</div>
+        <div style={{fontSize:'18px',fontWeight:700,color:'#374151'}}>{navItems.find(n=>n.id===view)?.l}</div>
+        <div style={{fontSize:'13px',color:'#94a3b8',marginTop:'5px'}}>Full implementation in Next.js + Node.js</div>
+        <a href="https://github.com/roiseuddinrasel/psu-crm-pm" target="_blank" style={{marginTop:'16px',padding:'8px 20px',background:G,color:'white',borderRadius:'8px',fontSize:'13px',fontWeight:600,textDecoration:'none'}}>View Full Source →</a>
+      </div>
+    );
+  }};
+
+  return(
+    <div style={{display:'flex',height:'100vh',fontFamily:'-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif',background:'#f0f4f8',overflow:'hidden'}}>
+
+      {/* ── Sidebar ── */}
+      <div style={{width:col?'58px':'224px',background:GD,display:'flex',flexDirection:'column',flexShrink:0,transition:'width .2s',overflow:'hidden'}}>
+        <div style={{padding:col?'14px 10px':'14px 16px',borderBottom:'1px solid rgba(255,255,255,.08)',display:'flex',alignItems:'center',gap:'10px',minHeight:'64px'}}>
+          <div style={{width:'36px',height:'36px',background:'white',borderRadius:'9px',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+            <div style={{color:G,fontWeight:900,fontSize:'10px',fontFamily:'Georgia,serif',lineHeight:1.1}}>PSU</div>
+            <div style={{color:G,fontWeight:700,fontSize:'6.5px',lineHeight:1}}>1928</div>
+          </div>
+          {!col&&<div style={{minWidth:0}}>
+            <div style={{color:'white',fontWeight:800,fontSize:'13px',lineHeight:1.1,fontFamily:'Georgia,serif'}}>Pacific States</div>
+            <div style={{color:'white',fontWeight:800,fontSize:'13px',lineHeight:1.1,fontFamily:'Georgia,serif'}}>University</div>
+            <div style={{color:'rgba(255,255,255,.4)',fontSize:'9px',marginTop:'1px',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>Konkuk University Foundation</div>
+          </div>}
+        </div>
+
+        {!col&&<div style={{padding:'10px 16px 4px',fontSize:'9px',fontWeight:700,color:'rgba(255,255,255,.3)',letterSpacing:'.1em'}}>NAVIGATION</div>}
+        <nav style={{flex:1,padding:'4px',overflowY:'auto',overflowX:'hidden'}}>
+          {navItems.map(item=>(
+            <button key={item.id} onClick={()=>setView(item.id)} style={{width:'100%',display:'flex',alignItems:'center',gap:'8px',padding:col?'9px':'9px 10px',border:'none',cursor:'pointer',borderRadius:'8px',marginBottom:'1px',background:view===item.id?'rgba(255,255,255,.16)':'transparent',color:view===item.id?'white':'rgba(255,255,255,.55)',fontSize:'12px',fontWeight:view===item.id?700:500,transition:'all .15s',justifyContent:col?'center':'flex-start',position:'relative'}} className="nb">
+              {view===item.id&&<div style={{position:'absolute',left:0,top:'50%',transform:'translateY(-50%)',width:'3px',height:'55%',background:'white',borderRadius:'0 2px 2px 0'}}/>}
+              <span style={{fontSize:'14px',flexShrink:0}}>{item.ic}</span>
+              {!col&&<span style={{whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{item.l}</span>}
+              {!col&&item.id==='ai'&&<span style={{marginLeft:'auto',background:'rgba(255,255,255,.18)',color:'white',fontSize:'8px',padding:'2px 5px',borderRadius:'8px',fontWeight:800,flexShrink:0}}>AI</span>}
+            </button>
+          ))}
+        </nav>
+
+        <div style={{borderTop:'1px solid rgba(255,255,255,.08)',padding:'10px 6px'}}>
+          {!col&&<div style={{display:'flex',alignItems:'center',gap:'8px',padding:'8px',borderRadius:'8px',background:'rgba(255,255,255,.08)',marginBottom:'6px'}}>
+            <div style={{width:'28px',height:'28px',borderRadius:'50%',background:G,display:'flex',alignItems:'center',justifyContent:'center',color:'white',fontWeight:700,fontSize:'10px',flexShrink:0}}>RU</div>
+            <div style={{minWidth:0,flex:1}}>
+              <div style={{color:'white',fontSize:'11px',fontWeight:700,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>Roise Uddin</div>
+              <div style={{color:'rgba(255,255,255,.5)',fontSize:'9px'}}>Super Admin · IEEE Sr.</div>
+            </div>
+          </div>}
+          <button onClick={()=>setCol(!col)} style={{width:'100%',display:'flex',justifyContent:'center',padding:'5px',background:'none',border:'none',cursor:'pointer',color:'rgba(255,255,255,.5)',borderRadius:'6px',fontSize:'13px'}} className="nb">{col?'→':'←'}</button>
+        </div>
+      </div>
+
+      {/* ── Main ── */}
+      <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden'}}>
+        <div style={{height:'50px',background:'white',borderBottom:'1px solid #f1f5f9',display:'flex',alignItems:'center',padding:'0 16px',gap:'10px',flexShrink:0}}>
+          <div style={{position:'relative',flex:1,maxWidth:'300px'}}>
+            <span style={{position:'absolute',left:'9px',top:'50%',transform:'translateY(-50%)',fontSize:'12px'}}>🔍</span>
+            <input style={{width:'100%',background:'#f8fafc',border:'1px solid #e2e8f0',borderRadius:'8px',padding:'6px 10px 6px 28px',fontSize:'12px',color:'#1e293b',outline:'none'}} placeholder="Search projects, tasks, contacts…"/>
+          </div>
+          <div style={{marginLeft:'auto',display:'flex',alignItems:'center',gap:'6px'}}>
+            <a href="https://github.com/roiseuddinrasel/psu-crm-pm" target="_blank" style={{padding:'5px 12px',background:'#1e293b',color:'white',borderRadius:'8px',fontSize:'11px',fontWeight:700,textDecoration:'none',display:'flex',alignItems:'center',gap:'5px'}}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+              GitHub
+            </a>
+            <div style={{position:'relative'}}>
+              <button onClick={()=>setNotif(!notif)} style={{padding:'5px 8px',background:'none',border:'none',cursor:'pointer',fontSize:'14px',borderRadius:'7px',position:'relative'}} onMouseEnter={e=>e.currentTarget.style.background='#f1f5f9'} onMouseLeave={e=>e.currentTarget.style.background='none'}>
+                🔔<div style={{position:'absolute',top:'3px',right:'4px',width:'6px',height:'6px',borderRadius:'50%',background:'#ef4444',border:'1px solid white'}}/>
+              </button>
+              {notif&&<div style={{position:'absolute',right:0,top:'100%',marginTop:'4px',width:'260px',background:'white',borderRadius:'12px',boxShadow:'0 8px 28px rgba(0,0,0,.12)',border:'1px solid #f1f5f9',zIndex:100,overflow:'hidden'}}>
+                <div style={{padding:'10px 14px',borderBottom:'1px solid #f1f5f9',fontWeight:700,fontSize:'12px',color:'#1e293b'}}>Notifications</div>
+                {notifs.map((n,i)=>(
+                  <div key={i} style={{padding:'9px 14px',borderBottom:'1px solid #f8fafc',display:'flex',gap:'8px',alignItems:'flex-start',cursor:'pointer'}} onMouseEnter={e=>e.currentTarget.style.background='#f8fafc'} onMouseLeave={e=>e.currentTarget.style.background='white'}>
+                    <div style={{width:'6px',height:'6px',borderRadius:'50%',marginTop:'4px',flexShrink:0,background:n.type==='warn'?'#d97706':n.type==='ok'?'#16a34a':'#2563eb'}}/>
+                    <div><div style={{fontSize:'12px',color:'#374151'}}>{n.text}</div><div style={{fontSize:'10px',color:'#94a3b8',marginTop:'1px'}}>{n.t}</div></div>
+                  </div>
+                ))}
+              </div>}
+            </div>
+            <div style={{display:'flex',alignItems:'center',gap:'6px',paddingLeft:'8px',borderLeft:'1px solid #f1f5f9'}}>
+              <div style={{width:'28px',height:'28px',borderRadius:'50%',background:G,display:'flex',alignItems:'center',justifyContent:'center',color:'white',fontWeight:700,fontSize:'10px'}}>RU</div>
+              <div><div style={{fontSize:'11px',fontWeight:700,color:'#1e293b'}}>Roise Uddin</div><div style={{fontSize:'9px',color:'#94a3b8'}}>Super Admin</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div style={{flex:1,overflowY:'auto'}} onClick={()=>notif&&setNotif(false)}>{render()}</div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.render(<App/>, document.getElementById('root'));
+</script>
+</body>
+</html>
